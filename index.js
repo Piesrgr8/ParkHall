@@ -1,46 +1,72 @@
 // Require the necessary discord.js classes
-const Discord = require("discord.js");
+const {GatewayIntentBits, Client, Collection, Routes} = require("discord.js");
+const path = require('node:path');
+const fs = require("fs");
 require("dotenv").config();
 
 // Create a new client instance
-const client = new Discord.Client({
-    intents: [Discord.GatewayIntentBits.Guilds],
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildPresences,
+    ],
 });
+
+// const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
 const rolereact = require("./modules/reactionrole");
+const musicplayer = require("./modules/musicplayer");
 
-const fs = require("fs");
-const commandFiles = fs
-    .readdirSync("./commands/")
-    .filter((file) => file.endsWith(".js"));
+client.commands = new Collection();
+
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
 for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
-    client.commands.set(command.name, command);
+	const filePath = path.join(commandsPath, file);
+	const command = require(filePath);
+	client.commands.set(command.data.name, command);
 }
 
-async function command_func(message) {
-    if (!message.content.startsWith(prefix) || message.author.bot) return;
-
-    const args = message.content.slice(prefix.length).split(/ +/);
-    const command = args.shift().toLowerCase();
-
-    if (command === "ping") {
-        client.commands.get("ping").execute(message, args);
-    } else if (command === "youtube") {
-        client.commands.get("youtube").execute(message, args);
-    }
-}
-
-client.on("messageCreate", (message) => {
-    command_func(message);
-});
-
-// When the client is ready, run this code (only once)
-client.once("ready", () => {
+client.on("ready", () => {
     console.log("Ready!");
     client.user.setStatus("online");
     client.user.setActivity("$help", { type: "LISTENING" });
     rolereact(client);
+    musicplayer(client);
+});
+
+// (async () => {
+// 	try {
+// 		console.log(`Started refreshing ${client.commands.length} application (/) commands.`);
+
+// 		const data = await rest.put(
+// 			Routes.applicationCommands("1011091289409863700"),
+// 			{ body: client.commands },
+// 		);
+
+// 		console.log(`Successfully reloaded ${client.data.length} application (/) commands.`);
+// 	} catch (error) {
+// 		console.error(error);
+// 	}
+// })();
+
+client.on("interactionCreate", async interaction => {
+    if(interaction.isChatInputCommand()) {
+        const command = client.commands.get(interaction.commandName);
+
+        if (command) {
+            try {
+                await command.execute(interaction);
+            } catch (error) {
+                console.error(error);
+                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+            }
+        }
+    }
 });
 
 // Login to Discord with your client's token
