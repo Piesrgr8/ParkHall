@@ -1,5 +1,5 @@
 // Require the necessary discord.js classes
-const {GatewayIntentBits, Client, Collection, Routes} = require("discord.js");
+const {GatewayIntentBits, Client, Collection, Routes, ActivityType} = require("discord.js");
 const path = require('node:path');
 const fs = require("fs");
 require("dotenv").config();
@@ -17,8 +17,9 @@ const client = new Client({
 
 // const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
-const rolereact = require("./modules/reactionrole");
-const musicplayer = require("./modules/musicplayer");
+const rolereact = require("./modules/floorselect");
+const pronouns = require("./modules/pronouns");
+// const musicplayer = require("./modules/musicplayer");
 
 client.commands = new Collection();
 
@@ -34,9 +35,9 @@ for (const file of commandFiles) {
 client.on("ready", () => {
     console.log("Ready!");
     client.user.setStatus("online");
-    client.user.setActivity("$help", { type: "LISTENING" });
+    client.user.setActivity("College Music", { type: ActivityType.Playing });
     rolereact(client);
-    musicplayer(client);
+    pronouns(client);
 });
 
 // (async () => {

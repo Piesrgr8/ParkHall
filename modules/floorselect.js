@@ -46,28 +46,29 @@ module.exports = (client) => {
     });
 
     client.on("interactionCreate", async (interaction) => {
-        if (interaction.isButton()) {
-            const role = interaction.guild.roles.cache.get(
-                ROLES[interaction.customId.toUpperCase()]
-            );
+        if (interaction.channelId != channel) return;
+        if (!interaction.isButton()) return;
+        
+        const role = interaction.guild.roles.cache.get(
+            ROLES[interaction.customId.toUpperCase()]
+        );
 
-            if (!role) return interaction.reply({ content: 'Role not found', ephemeral: true });
-            
-            return interaction.member.roles
-                .add(role)
-                .then((member) =>
-                    interaction.reply({
-                        content: `The ${role} role was added to you ${member}`,
-                        ephemeral: true,
-                    })
-            )
-            .catch((err) => {
-                console.log(err);
-                return interaction.reply({
-                    content: `Something went wrong. The ${role} role was not added`,
+        if (!role) return interaction.reply({ content: 'Role not found', ephemeral: true });
+        
+        return interaction.member.roles
+            .add(role)
+            .then((member) =>
+                interaction.reply({
+                    content: `The ${role} role was added to you ${member}`,
                     ephemeral: true,
-                });
+                })
+        )
+        .catch((err) => {
+            console.log(err);
+            return interaction.reply({
+                content: `Something went wrong. The ${role} role was not added`,
+                ephemeral: true,
             });
-        }
+        });
     });
 };
